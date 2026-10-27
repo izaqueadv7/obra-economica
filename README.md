@@ -1,27 +1,37 @@
 # Obra Econômica
 
-Aplicação inicial para organizar insumos de construção e pesquisar ofertas em marketplaces.
+Aplicação responsiva em Next.js para organizar insumos de construção, estimar custos e pesquisar anúncios no Mercado Livre e Shopee.
 
-## Funcionalidades atuais
-- Cadastro de materiais, categorias, unidades, quantidades e preços.
-- Cálculo automático de subtotais e total dos itens com preço informado.
-- Links de pesquisa no Mercado Livre e Shopee para cada insumo.
-- Sugestões de materiais comuns.
+## O que já funciona
+- Cadastro de materiais com categoria, unidade e quantidade.
+- Informar e editar o preço unitário.
+- Cálculo automático dos subtotais e total dos itens precificados.
+- Busca de anúncios no Mercado Livre e na Shopee por material.
+- Salvamento da lista no armazenamento local do navegador.
+- Lista de exemplo para testar a interface.
 - Exportação CSV compatível com Excel.
-- Layout responsivo.
+- Layout para computador e celular.
 
-## Executar
-Abra `index.html` no navegador. Não é necessária instalação nesta versão estática.
+## Executar localmente
+1. Instale Node.js 20 ou superior.
+2. Execute `npm install`.
+3. Execute `npm run dev`.
+4. Abra o endereço informado no terminal.
 
-## Limitações importantes
-Este commit **não busca nem extrai preços automaticamente** e não calcula frete. Os links abrem pesquisas dos marketplaces; confira anúncio, vendedor, especificações, embalagem, estoque e frete. Nenhum preço de demonstração é tratado como cotação real.
+## Publicação pelo GitHub Pages
+O workflow em `.github/workflows/deploy.yml` compila o Next.js como site estático e publica a pasta `out` quando houver push na branch `main`. Em **Settings → Pages**, selecione **GitHub Actions** como fonte, caso ainda não esteja ativada. O site ficará disponível em:
 
-## Próximas etapas
-1. Migrar a interface para Next.js e separar os componentes.
-2. Implementar API de servidor para pesquisar anúncios usando integrações oficiais e autorizadas.
-3. Confirmar permissões e escopos disponíveis para Mercado Livre e Shopee.
-4. Normalizar especificações, embalagens, preço e custo de entrega.
-5. Incluir data/hora da consulta, origem dos dados e avisos de disponibilidade.
-6. Criar importação de planilhas XLSX/CSV.
+https://izaqueadv7.github.io/obra-economica/
 
-Não coloque tokens ou chaves de API no HTML público. Credenciais devem ficar somente em variáveis de ambiente no servidor.
+## Importante sobre os preços
+A versão inicial **não consulta preços automaticamente**. Os botões abrem buscas nos marketplaces, e é necessário conferir o valor no anúncio, a especificação, o vendedor, a embalagem, o prazo e o frete. A lista não inventa ou apresenta valores demonstrativos como cotações reais.
+
+## Próxima fase
+- Avaliar e integrar as APIs oficiais disponíveis.
+- Confirmar a permissão necessária para consulta de produtos no Mercado Livre e Shopee.
+- Implementar um backend para pesquisas automáticas, sem expor chaves no navegador.
+- Normalizar peso, dimensão, embalagem, preço e frete.
+- Indicar a fonte e a data/hora de cada preço recebido.
+- Importar lista de insumos em Excel/CSV.
+
+Nunca inclua chaves ou tokens de API em arquivos frontend públicos. Segredos devem ser mantidos em variáveis de ambiente do servidor.
