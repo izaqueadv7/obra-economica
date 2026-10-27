@@ -22,6 +22,8 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm install
+      - name: Exclude server API route from static Pages build
+        run: mv app/api/search/route.ts app/api/search/route.ts.disabled
       - name: Build site
         run: npm run build
         env:
