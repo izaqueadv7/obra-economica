@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, Fragment, useEffect, useMemo, useState } from "react";
 
 type Material = {
   id: number;
@@ -9,6 +9,31 @@ type Material = {
   quantity: number;
   unit: string;
   price: number | null;
+};
+
+type MarketOffer = {
+  id: string;
+  marketplace: string;
+  title: string;
+  price: number | null;
+  url: string;
+  imageUrl?: string | null;
+  seller?: string | null;
+  freeShipping?: boolean | null;
+};
+
+type MarketSource = {
+  marketplace: string;
+  status: "ok" | "empty" | "not_configured" | "needs_auth" | "error";
+  message: string;
+  count: number;
+};
+
+type SearchState = {
+  loading: boolean;
+  offers: MarketOffer[];
+  sources: MarketSource[];
+  error?: string;
 };
 
 const categories = [
@@ -31,6 +56,7 @@ export default function Home() {
   const [unit, setUnit] = useState("un.");
   const [price, setPrice] = useState("");
   const [toast, setToast] = useState("");
+  const [searches, setSearches] = useState<Record<number, SearchState>>({});
 
   useEffect(() => {
     try {
@@ -122,6 +148,23 @@ export default function Home() {
     notify("CSV exportado. Abra-o no Excel.");
   }
 
+  async function compareOffers(item: Material) {
+    if (typeof window !== "undefined" && window.location.hostname.endsWith("github.io")) {
+      setSearches((current) => ({ ...current, [item.id]: { loading: false, offers: [], sources: [], error: "A versão do GitHub Pages é estática e não tem backend para consultar APIs. Abra a versão hospedada no Vercel para pesquisa automática; os links diretos abaixo continuam funcionando." } }));
+      return;
+    }
+    setSearches((current) => ({ ...current, [item.id]: { loading: true, offers: [], sources: [] } }));
+    try {
+      const response = await fetch("/api/search?q=" + encodeURIComponent(item.name), { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Não foi possível consultar as fontes de preços.");
+      setSearches((current) => ({ ...current, [item.id]: { loading: false, offers: data.offers || [], sources: data.sources || [] } }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Falha inesperada ao consultar os marketplaces.";
+      setSearches((current) => ({ ...current, [item.id]: { loading: false, offers: [], sources: [], error: message } }));
+    }
+  }
+
   return (
     <>
       <header className="topbar">
@@ -199,14 +242,14 @@ export default function Home() {
                 <div className="emptyState"><div className="emptyIcon">▧</div><h3>Sua lista começa aqui</h3><p>Adicione materiais para organizar quantidades, estimar custos e pesquisar anúncios nos marketplaces.</p><button className="button primary" onClick={() => document.getElementById("material-name")?.focus()}>Adicionar material</button></div>
               ) : (
                 <div className="tableScroll"><table><thead><tr><th>Material / categoria</th><th>Qtd.</th><th>Preço unit.</th><th>Total</th><th>Pesquisar oferta</th><th aria-label="Ações" /></tr></thead>
-                <tbody>{items.map((item) => <tr key={item.id}>
+                <tbody>{items.map((item) => <Fragment key={item.id}><tr>
                   <td><div className="productName">{item.name}</div><div className="itemMeta"><span className="categoryTag">{item.category}</span></div></td>
                   <td><div className="quantityCell"><input className="quantityInput" aria-label={"Quantidade de " + item.name} type="number" min="0.01" step="any" value={item.quantity} onChange={(event) => updateItem(item.id, { quantity: Math.max(0.01, Number(event.target.value) || 0.01) })} /><span>{item.unit}</span></div></td>
                   <td><input className="priceInput" aria-label={"Preço unitário de " + item.name} type="number" min="0" step="0.01" placeholder="R$ —" value={item.price === null ? "" : item.price} onChange={(event) => updateItem(item.id, { price: event.target.value === "" ? null : Math.max(0, Number(event.target.value) || 0) })} /></td>
                   <td className="subtotal">{item.price === null ? "—" : brl(item.quantity * item.price)}</td>
-                  <td><div className="marketLinks"><a className="marketButton ml" href={marketUrl("ml", item.name)} target="_blank" rel="noreferrer">Mercado Livre ↗</a><a className="marketButton sh" href={marketUrl("sh", item.name)} target="_blank" rel="noreferrer">Shopee ↗</a></div></td>
+                  <td><div className="marketLinks"><button className="marketSearchButton" disabled={searches[item.id]?.loading} onClick={() => compareOffers(item)}>{searches[item.id]?.loading ? "Pesquisando…" : "Comparar preços"}</button><a className="marketButton ml" href={marketUrl("ml", item.name)} target="_blank" rel="noreferrer">ML ↗</a><a className="marketButton sh" href={marketUrl("sh", item.name)} target="_blank" rel="noreferrer">Shopee ↗</a></div></td>
                   <td><button className="removeButton" aria-label={"Remover " + item.name} onClick={() => removeItem(item.id)}>×</button></td>
-                </tr>)}</tbody></table></div>
+                </tr>{searches[item.id] && <tr><td colSpan={6}><div className="offersPanel">{searches[item.id].loading ? <p>Consultando as fontes configuradas…</p> : searches[item.id].error ? <p className="offerMessage">{searches[item.id].error}</p> : <><div className="offersHeading">Resultados para “{item.name}” <span>Confira especificação, embalagem, vendedor e frete antes de comparar.</span></div>{searches[item.id].sources.map((source) => <p key={source.marketplace} className={"sourceStatus source-" + source.status}><strong>{source.marketplace}:</strong> {source.message}</p>)}{searches[item.id].offers.length ? <div className="offerGrid">{searches[item.id].offers.map((offer) => <article className="offerCard" key={offer.marketplace + "-" + offer.id}><div className="offerMarket">{offer.marketplace}</div><div className="offerTitle">{offer.title}</div><div className="offerPrice">{offer.price === null ? "Preço não informado" : brl(offer.price)}</div>{offer.seller && <div className="offerSeller">Vendedor: {offer.seller}</div>}{offer.freeShipping === true && <div className="freeShipping">Frete grátis indicado</div>}<a href={offer.url} target="_blank" rel="noreferrer" className="offerLink">Ver anúncio ↗</a></article>)}</div> : <p className="offerMessage">Nenhuma oferta foi devolvida pelas fontes disponíveis para esta consulta.</p>}</>}</div></td></tr>} </Fragment>)}</tbody></table></div>
               )}
             </div>
             <div className="totalBar"><div><span>TOTAL DOS MATERIAIS COM PREÇO INFORMADO</span><p>Preencha os preços encontrados para calcular o orçamento.</p></div><strong>{brl(total)}</strong></div>
