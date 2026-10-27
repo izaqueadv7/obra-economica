@@ -6,7 +6,6 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   images: { unoptimized: true },
   basePath: isGitHubPages ? "/obra-economica" : "",
-  assetPrefix: isGitHubPages ? "/obra-economica/" : undefined,
 };
 
 export default nextConfig;
