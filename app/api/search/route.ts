@@ -65,16 +65,24 @@ async function searchMercadoLivre(query: string): Promise<SourceResult> {
     }
 
     const rows = Array.isArray(body.results) ? body.results : [];
-    const offers: Offer[] = rows.map((item: Record<string, any>) => ({
-      id: String(item.id ?? item.permalink ?? Math.random()),
-      marketplace: "Mercado Livre",
-      title: String(item.title ?? "Produto sem título"),
-      price: money(item.price),
-      url: String(item.permalink ?? ""),
-      imageUrl: typeof item.thumbnail === "string" ? item.thumbnail : null,
-      seller: typeof item.seller?.nickname === "string" ? item.seller.nickname : null,
-      freeShipping: typeof item.shipping?.free_shipping === "boolean" ? item.shipping.free_shipping : null,
-    })).filter((item: Offer) => item.url.startsWith("https://") && item.title);
+    const offers: Offer[] = rows.map((item: Record<string, unknown>) => {
+      const seller = item.seller && typeof item.seller === "object"
+        ? item.seller as Record<string, unknown>
+        : {};
+      const shipping = item.shipping && typeof item.shipping === "object"
+        ? item.shipping as Record<string, unknown>
+        : {};
+      return {
+        id: String(item.id ?? item.permalink ?? Math.random()),
+        marketplace: "Mercado Livre",
+        title: String(item.title ?? "Produto sem título"),
+        price: money(item.price),
+        url: String(item.permalink ?? ""),
+        imageUrl: typeof item.thumbnail === "string" ? item.thumbnail : null,
+        seller: typeof seller.nickname === "string" ? seller.nickname : null,
+        freeShipping: typeof shipping.free_shipping === "boolean" ? shipping.free_shipping : null,
+      };
+    }).filter((item: Offer) => item.url.startsWith("https://") && item.title);
 
     return {
       marketplace: "Mercado Livre",
@@ -149,7 +157,7 @@ async function searchShopee(query: string): Promise<SourceResult> {
 
     const nodes = body?.data?.productOfferV2?.nodes;
     const rows = Array.isArray(nodes) ? nodes : [];
-    const offers: Offer[] = rows.map((item: Record<string, any>) => ({
+    const offers: Offer[] = rows.map((item: Record<string, unknown>) => ({
       id: String(item.itemId ?? item.offerLink ?? item.productLink ?? Math.random()),
       marketplace: "Shopee",
       title: String(item.productName ?? "Produto sem título"),
