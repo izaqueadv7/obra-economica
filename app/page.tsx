@@ -33,6 +33,7 @@ type SearchState = {
   loading: boolean;
   offers: MarketOffer[];
   sources: MarketSource[];
+  checkedAt?: string;
   error?: string;
 };
 
@@ -158,7 +159,7 @@ export default function Home() {
       const response = await fetch("/api/search?q=" + encodeURIComponent(item.name), { cache: "no-store" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Não foi possível consultar as fontes de preços.");
-      setSearches((current) => ({ ...current, [item.id]: { loading: false, offers: data.offers || [], sources: data.sources || [] } }));
+      setSearches((current) => ({ ...current, [item.id]: { loading: false, offers: data.offers || [], sources: data.sources || [], checkedAt: data.checkedAt || undefined } }));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Falha inesperada ao consultar os marketplaces.";
       setSearches((current) => ({ ...current, [item.id]: { loading: false, offers: [], sources: [], error: message } }));
@@ -249,11 +250,11 @@ export default function Home() {
                   <td className="subtotal">{item.price === null ? "—" : brl(item.quantity * item.price)}</td>
                   <td><div className="marketLinks"><button className="marketSearchButton" disabled={searches[item.id]?.loading} onClick={() => compareOffers(item)}>{searches[item.id]?.loading ? "Pesquisando…" : "Comparar preços"}</button><a className="marketButton ml" href={marketUrl("ml", item.name)} target="_blank" rel="noreferrer">ML ↗</a><a className="marketButton sh" href={marketUrl("sh", item.name)} target="_blank" rel="noreferrer">Shopee ↗</a></div></td>
                   <td><button className="removeButton" aria-label={"Remover " + item.name} onClick={() => removeItem(item.id)}>×</button></td>
-                </tr>{searches[item.id] && <tr><td colSpan={6}><div className="offersPanel">{searches[item.id].loading ? <p>Consultando as fontes configuradas…</p> : searches[item.id].error ? <p className="offerMessage">{searches[item.id].error}</p> : <><div className="offersHeading">Resultados para “{item.name}” <span>Confira especificação, embalagem, vendedor e frete antes de comparar.</span></div>{searches[item.id].sources.map((source) => <p key={source.marketplace} className={"sourceStatus source-" + source.status}><strong>{source.marketplace}:</strong> {source.message}</p>)}{searches[item.id].offers.length ? <div className="offerGrid">{searches[item.id].offers.map((offer) => <article className="offerCard" key={offer.marketplace + "-" + offer.id}><div className="offerMarket">{offer.marketplace}</div><div className="offerTitle">{offer.title}</div><div className="offerPrice">{offer.price === null ? "Preço não informado" : brl(offer.price)}</div>{offer.seller && <div className="offerSeller">Vendedor: {offer.seller}</div>}{offer.freeShipping === true && <div className="freeShipping">Frete grátis indicado</div>}<a href={offer.url} target="_blank" rel="noreferrer" className="offerLink">Ver anúncio ↗</a></article>)}</div> : <p className="offerMessage">Nenhuma oferta foi devolvida pelas fontes disponíveis para esta consulta.</p>}</>}</div></td></tr>} </Fragment>)}</tbody></table></div>
+                </tr>{searches[item.id] && <tr><td colSpan={6}><div className="offersPanel">{searches[item.id].loading ? <p>Consultando as fontes configuradas…</p> : searches[item.id].error ? <p className="offerMessage">{searches[item.id].error}</p> : <><div className="offersHeading">Resultados para “{item.name}” <span>Confira especificação, embalagem, vendedor e frete antes de comparar.{searches[item.id].checkedAt ? " Consulta: " + new Date(searches[item.id].checkedAt as string).toLocaleString("pt-BR") + "." : ""}</span></div>{searches[item.id].sources.map((source) => <p key={source.marketplace} className={"sourceStatus source-" + source.status}><strong>{source.marketplace}:</strong> {source.message}</p>)}{searches[item.id].offers.length ? <div className="offerGrid">{searches[item.id].offers.map((offer) => <article className="offerCard" key={offer.marketplace + "-" + offer.id}><div className="offerMarket">{offer.marketplace}</div><div className="offerTitle">{offer.title}</div><div className="offerPrice">{offer.price === null ? "Preço não informado" : brl(offer.price)}</div>{offer.seller && <div className="offerSeller">Vendedor: {offer.seller}</div>}{offer.freeShipping === true && <div className="freeShipping">Frete grátis indicado</div>}<a href={offer.url} target="_blank" rel="noreferrer" className="offerLink">Ver anúncio ↗</a></article>)}</div> : <p className="offerMessage">Nenhuma oferta foi devolvida pelas fontes disponíveis para esta consulta.</p>}</>}</div></td></tr>} </Fragment>)}</tbody></table></div>
               )}
             </div>
             <div className="totalBar"><div><span>TOTAL DOS MATERIAIS COM PREÇO INFORMADO</span><p>Preencha os preços encontrados para calcular o orçamento.</p></div><strong>{brl(total)}</strong></div>
-            <p className="disclaimer"><strong>Transparência:</strong> esta versão abre pesquisas nos marketplaces; ainda não consulta preços automaticamente. Confira preço, vendedor, embalagem, prazo e frete no anúncio antes de comprar. Nenhum preço fictício é mostrado como cotação real.</p>
+            <p className="disclaimer"><strong>Transparência:</strong> no GitHub Pages, o site é estático e abre pesquisas diretas. A comparação automática exige hospedagem com backend e as credenciais necessárias. Confira especificação, embalagem, vendedor, prazo e frete antes de comprar; nenhum preço fictício é apresentado como cotação real.</p>
           </section>
         </div>
       </main>
